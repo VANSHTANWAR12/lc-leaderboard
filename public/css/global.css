@@ -49,7 +49,7 @@ body::before {
   z-index: -2;
 }
 
-/* Scanline Effect */
+/* Scanline Effect - Subtle */
 body::after {
   content: "";
   position: fixed;
@@ -65,7 +65,7 @@ body::after {
   background-size: 100% 4px, 3px 100%;
   pointer-events: none;
   z-index: 1000;
-  opacity: 0.3;
+  opacity: 0.15;
 }
 
 /* Light Streaks Overlay */
@@ -100,7 +100,7 @@ body::after {
   }
 }
 
-/* Typography */
+/* Typography & Neon Sweeps */
 h1,
 h2,
 h3,
@@ -109,35 +109,132 @@ h3,
   text-transform: uppercase;
   letter-spacing: 2px;
   font-weight: 900;
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
 }
 
-/* Navigation */
+h1::after,
+h2::after,
+h3::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(0, 245, 255, 0.2),
+      transparent);
+  animation: textSweep 4s infinite;
+}
+
+@keyframes textSweep {
+  0% {
+    left: -100%;
+  }
+
+  20% {
+    left: 100%;
+  }
+
+  100% {
+    left: 100%;
+  }
+}
+
+/* Navigation - Cyber Command Strip */
 .nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 40px;
-  background: rgba(13, 13, 20, 0.8);
-  border-bottom: 1px solid var(--neon-cyan);
-  box-shadow: 0 0 15px rgba(0, 245, 255, 0.2);
+  padding: 12px 60px;
+  background: rgba(10, 10, 15, 0.9);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 245, 255, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(0, 245, 255, 0.1);
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000;
 }
 
 .brand {
-  font-size: 1.2rem;
-  color: var(--neon-cyan);
-  text-shadow: var(--glow-cyan);
+  font-size: 1.1rem;
+  color: var(--text-main);
+  letter-spacing: 3px;
+  font-family: 'Orbitron', sans-serif;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
-.brand::before {
-  content: "»";
-  color: var(--neon-pink);
-  animation: flicker 1s infinite;
+.brand .dot {
+  width: 6px;
+  height: 6px;
+  background: var(--neon-cyan);
+  border-radius: 50%;
+  box-shadow: var(--glow-cyan);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.5);
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.nav-links {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+}
+
+.nav-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 2.5px;
+  transition: all 0.3s ease;
+  font-family: 'Orbitron', sans-serif;
+  position: relative;
+  padding: 8px 0;
+}
+
+.nav-links a:hover {
+  color: var(--neon-cyan);
+  text-shadow: var(--glow-cyan);
+}
+
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--neon-cyan);
+  box-shadow: var(--glow-cyan);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform: translateX(-50%);
+}
+
+.nav-links a:hover::after {
+  width: 100%;
 }
 
 @keyframes flicker {

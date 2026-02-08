@@ -114,7 +114,9 @@ async function loadLeaderboard(showStatus = true) {
     list.innerHTML = '';
 
     data.forEach((user, i) => {
-      list.appendChild(createUserNode(user, i + 1));
+      const node = createUserNode(user, i + 1);
+      node.style.animationDelay = `${i * 0.1}s`;
+      list.appendChild(node);
     });
     if (showStatus) setStatus('Updated');
   } catch (err) {
