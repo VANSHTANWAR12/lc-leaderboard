@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>LC Leaderboard - Login</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/login.css">
+</head>
+
+<body>
+  <div class="login-container">
+    <section class="panel login-panel">
+      <h1 style="text-align:center">🔥 LC Leaderboard</h1>
+
+      <div id="loginForm">
+        <h2>Authentication Required</h2>
+        <div class="form-group">
+          <input id="username" type="text" placeholder="Access ID / Username" />
+          <input id="password" type="password" placeholder="Passcode" />
+          <button id="loginBtn" onclick="login()">Enter Arena</button>
+          <button id="signupBtn" class="ghost" onclick="signup()">Create Identity</button>
+        </div>
+        <div id="message"></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="js/login.js"></script>
+</body>
+
+</html>

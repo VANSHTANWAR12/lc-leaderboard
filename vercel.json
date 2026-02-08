@@ -2,34 +2,46 @@
   "version": 2,
   "builds": [
     {
-      "src": "server.js",
+      "src": "src/server.js",
       "use": "@vercel/node"
     },
     {
-      "src": "*.html",
+      "src": "public/*.html",
       "use": "@vercel/static"
     },
     {
-      "src": "styles.css",
+      "src": "public/css/*.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "public/js/*.js",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "server.js"
+      "dest": "src/server.js"
+    },
+    {
+      "src": "/css/(.*)",
+      "dest": "/public/css/$1"
+    },
+    {
+      "src": "/js/(.*)",
+      "dest": "/public/js/$1"
     },
     {
       "src": "/login",
-      "dest": "/login.html"
+      "dest": "/public/login.html"
     },
     {
-      "src": "/about",
-      "dest": "/about.html"
+      "src": "/about.html",
+      "dest": "/public/about.html"
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/public/index.html"
     }
   ]
 }

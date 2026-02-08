@@ -3,15 +3,17 @@ const axios = require("axios");
 const cors = require("cors");
 const fs = require("fs");
 const crypto = require("crypto");
+const path = require("path");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-// Serve static files (index.html, about.html, styles, etc.)
-app.use(express.static(__dirname));
 
-const FILE_PATH = "./friends.json";
-const USERS_PATH = "./users.json";
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, "../public")));
+
+const FILE_PATH = path.join(__dirname, "../data/friends.json");
+const USERS_PATH = path.join(__dirname, "../data/users.json");
 
 // Load friends from file (legacy, for migration)
 function loadFriends() {
