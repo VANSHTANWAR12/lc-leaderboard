@@ -4,23 +4,49 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>LC Leaderboard - Login</title>
+  <title>Access Control - LC Leaderboard</title>
   <link rel="stylesheet" href="css/global.css">
   <link rel="stylesheet" href="css/login.css">
 </head>
 
-<body>
+<body class="arena-theme">
+  <div class="bg-streaks">
+    <div class="streak" style="--x:15%; --d:6s"></div>
+    <div class="streak" style="--x:85%; --d:9s"></div>
+  </div>
+
+  <nav class="nav">
+    <div class="brand">🔥 LC Leaderboard</div>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="login.html">Login</a>
+    </div>
+  </nav>
+
   <div class="login-container">
-    <section class="panel login-panel">
-      <h1 style="text-align:center">🔥 LC Leaderboard</h1>
+    <section class="login-panel">
+      <h1>ACCESS CONTROL SYSTEM</h1>
 
       <div id="loginForm">
-        <h2>Authentication Required</h2>
+        <h2>Identity Verification Required</h2>
         <div class="form-group">
-          <input id="username" type="text" placeholder="Access ID / Username" />
-          <input id="password" type="password" placeholder="Passcode" />
-          <button id="loginBtn" onclick="login()">Enter Arena</button>
-          <button id="signupBtn" class="ghost" onclick="signup()">Create Identity</button>
+          <div class="input-wrapper">
+            <label class="input-label">> USERNAME</label>
+            <input id="username" type="text" placeholder="Enter Operator ID..." />
+            <div class="caret"></div>
+          </div>
+
+          <div class="input-wrapper">
+            <label class="input-label">> PASSCODE</label>
+            <input id="password" type="password" placeholder="••••••••" />
+            <div class="caret"></div>
+          </div>
+
+          <div class="login-actions">
+            <button id="loginBtn" onclick="login()">INITIATE SESSION</button>
+            <button id="signupBtn" class="ghost" onclick="signup()">REGISTER OPERATOR</button>
+          </div>
         </div>
         <div id="message"></div>
       </div>

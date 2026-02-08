@@ -27,6 +27,18 @@
       rgba(138, 43, 226, 0.02) 10px,
       rgba(138, 43, 226, 0.02) 11px);
   pointer-events: none;
+  animation: scanLines 20s linear infinite;
+  background-size: 200% 200%;
+}
+
+@keyframes scanLines {
+  from {
+    background-position: 0 0;
+  }
+
+  to {
+    background-position: 100% 100%;
+  }
 }
 
 .system-title {
