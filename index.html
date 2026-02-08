@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>LeetCode Leaderboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* small page-specific overrides */
+    .controls { display:flex; gap:8px; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="brand">🔥 LC Leaderboard</div>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/about.html">About</a>
+      <span id="userInfo" style="margin-left:12px; color:var(--muted)"></span>
+      <button id="logoutBtn" class="ghost" style="padding:6px 12px; font-size:13px; margin-left:8px; display:none;">Logout</button>
+    </div>
+  </nav>
+
+  <main class="main">
+    <section class="panel">
+      <h1>Friends Leaderboard</h1>
+
+      <div class="row controls">
+        <input id="username" placeholder="LeetCode username" />
+        <button id="addBtn">Add</button>
+        <button id="refreshBtn" class="ghost">Refresh</button>
+      </div>
+
+      <ul id="list" class="leaderboard"></ul>
+    </section>
+  </main>
+
+  <script>
+    const API = window.location.origin; // Auto-detect from current domain
+    let token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    // Check login
+    if (!token) {
+      window.location.href = '/login.html';
+    } else {
+      document.getElementById('userInfo').textContent = `Hi, ${user.username}`;
+      document.getElementById('logoutBtn').style.display = 'inline-block';
+    }
+
+    document.getElementById('addBtn').addEventListener('click', addFriend);
+    document.getElementById('refreshBtn').addEventListener('click', loadLeaderboard);
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+
+    async function logout() {
+      await fetch(`${API}/logout`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login.html';
+    }
+
+    async function addFriend() {
+      const username = document.getElementById('username').value.trim();
+      if (!username) return;
+
+      try {
+        await fetch(`${API}/add-friend`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ username })
+        });
+
+        document.getElementById('username').value = '';
+        loadLeaderboard();
+      } catch (err) {
+        setStatus('Error adding friend');
+        console.error(err);
+      }
+    }
+
+    function createUserNode(user, rank) {
+      const li = document.createElement('li');
+      li.className = 'user';
+
+      const profileUrl = `https://leetcode.com/${encodeURIComponent(user.username)}`;
+
+      li.innerHTML = `
+        <div class="left">
+          <div class="rank">#${rank} <a class="username-link" href="${profileUrl}" target="_blank">${user.username}</a></div>
+          <div class="counts">
+            <span class="easy">Easy: <strong>${user.easy}</strong></span>
+            <span class="medium">Medium: <strong>${user.medium}</strong></span>
+            <span class="hard">Hard: <strong>${user.hard}</strong></span>
+          </div>
+        </div>
+        <div class="right">
+          <div class="total">${user.totalSolved} solved</div>
+          <div style="margin-top:8px">
+            <button class="ghost remove">Remove</button>
+          </div>
+        </div>
+      `;
+
+      li.querySelector('.remove').addEventListener('click', async () => {
+        if (!confirm(`Remove ${user.username} from leaderboard?`)) return;
+        try {
+          await fetch(`${API}/remove-friend`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ username: user.username })
+          });
+          loadLeaderboard();
+        } catch (err) {
+          setStatus('Error removing friend');
+          console.error(err);
+        }
+      });
+
+      return li;
+    }
+
+    async function loadLeaderboard(showStatus = true) {
+      try {
+        if (showStatus) setStatus('Loading...');
+        const res = await fetch(`${API}/leaderboard`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+          }
+          setStatus('Error fetching leaderboard');
+          return;
+        }
+
+        const data = await res.json();
+
+        const list = document.getElementById('list');
+        list.innerHTML = '';
+
+        data.forEach((user, i) => {
+          list.appendChild(createUserNode(user, i + 1));
+        });
+        if (showStatus) setStatus('Updated');
+      } catch (err) {
+        setStatus('Error fetching leaderboard');
+        console.error(err);
+      }
+    }
+
+    // simple status indicator
+    const statusEl = document.createElement('div');
+    statusEl.style.marginTop = '10px';
+    statusEl.style.fontSize = '13px';
+    statusEl.style.color = 'var(--muted)';
+    document.querySelector('.panel').appendChild(statusEl);
+    function setStatus(msg){ statusEl.textContent = msg }
+
+    // auto-refresh every 60 seconds
+    setInterval(()=> loadLeaderboard(false), 60000);
+
+    // initial load
+    loadLeaderboard();
+  </script>
+</body>
+</html>
