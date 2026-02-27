@@ -1,9 +1,9 @@
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
-const fs = require("fs");
 const crypto = require("crypto");
 const path = require("path");
+require('dotenv').config();
 
 const app = express();
 app.use(cors());
@@ -11,31 +11,9 @@ app.use(express.json());
 
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, "../public")));
-
-const FILE_PATH = path.join(__dirname, "../data/friends.json");
-const USERS_PATH = path.join(__dirname, "../data/users.json");
-
-// Load friends from file (legacy, for migration)
-function loadFriends() {
-  if (!fs.existsSync(FILE_PATH)) return [];
-  return JSON.parse(fs.readFileSync(FILE_PATH));
-}
-
-// Save friends to file (legacy, for migration)
-function saveFriends(friends) {
-  fs.writeFileSync(FILE_PATH, JSON.stringify(friends, null, 2));
-}
-
-// Load users
-function loadUsers() {
-  if (!fs.existsSync(USERS_PATH)) return {};
-  return JSON.parse(fs.readFileSync(USERS_PATH));
-}
-
-// Save users
-function saveUsers(users) {
-  fs.writeFileSync(USERS_PATH, JSON.stringify(users, null, 2));
-}
+const connectDb = require("./models/db")
+connectDb()
+const User = require("./models/User");
 
 // Hash password
 function hashPassword(pwd) {
@@ -48,21 +26,17 @@ function generateToken() {
 }
 
 // Verify token and get user
-function verifyToken(token) {
-  const users = loadUsers();
-  for (const username in users) {
-    if (users[username].token === token) {
-      return username;
-    }
-  }
-  return null;
+async function verifyToken(token) {
+  if (!token) return null;
+  const user = await User.findOne({ token });
+  return user ? user.username : null;
 }
 
 // Auth middleware
-function authMiddleware(req, res, next) {
+async function authMiddleware(req, res, next) {
   const auth = req.headers.authorization || '';
   const token = auth.replace('Bearer ', '');
-  const user = verifyToken(token);
+  const user = await verifyToken(token);
   if (!user) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
@@ -71,83 +45,99 @@ function authMiddleware(req, res, next) {
 }
 
 // 🔐 Sign Up
-app.post('/signup', (req, res) => {
+app.post('/signup', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: 'Username and password required' });
   }
 
-  let users = loadUsers();
-  if (users[username]) {
-    return res.status(400).json({ error: 'Username already taken' });
+  try {
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Username already taken' });
+    }
+
+    const token = generateToken();
+    const newUser = new User({
+      username,
+      password: hashPassword(password),
+      token,
+      friends: []
+    });
+
+    await newUser.save();
+    res.json({ message: 'Signup successful', user: { username }, token });
+  } catch (err) {
+    res.status(500).json({ error: 'Error during signup' });
   }
-
-  const token = generateToken();
-  users[username] = {
-    password: hashPassword(password),
-    token,
-    friends: []
-  };
-  saveUsers(users);
-
-  res.json({ message: 'Signup successful', user: { username }, token });
 });
 
 // 🔑 Login
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: 'Username and password required' });
   }
 
-  let users = loadUsers();
-  if (!users[username] || users[username].password !== hashPassword(password)) {
-    return res.status(401).json({ error: 'Invalid credentials' });
+  try {
+    const user = await User.findOne({ username });
+    if (!user || user.password !== hashPassword(password)) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = generateToken();
+    user.token = token;
+    await user.save();
+
+    res.json({ message: 'Login successful', user: { username }, token });
+  } catch (err) {
+    res.status(500).json({ error: 'Error during login' });
   }
-
-  const token = generateToken();
-  users[username].token = token;
-  saveUsers(users);
-
-  res.json({ message: 'Login successful', user: { username }, token });
 });
 
 // 🚪 Logout
-app.post('/logout', authMiddleware, (req, res) => {
-  let users = loadUsers();
-  users[req.user].token = null;
-  saveUsers(users);
-  res.json({ message: 'Logged out' });
+app.post('/logout', authMiddleware, async (req, res) => {
+  try {
+    await User.findOneAndUpdate({ username: req.user }, { token: null });
+    res.json({ message: 'Logged out' });
+  } catch (err) {
+    res.status(500).json({ error: 'Error during logout' });
+  }
 });
 
 // ➕ Add friend
-app.post("/add-friend", authMiddleware, (req, res) => {
+app.post("/add-friend", authMiddleware, async (req, res) => {
   const { username } = req.body;
 
   if (!username) {
     return res.status(400).json({ error: "Username required" });
   }
 
-  let users = loadUsers();
-
-  if (!users[req.user].friends.includes(username)) {
-    users[req.user].friends.push(username);
-    saveUsers(users);
+  try {
+    const user = await User.findOne({ username: req.user });
+    if (!user.friends.includes(username)) {
+      user.friends.push(username);
+      await user.save();
+    }
+    res.json({ message: "Friend added", friends: user.friends });
+  } catch (err) {
+    res.status(500).json({ error: "Error adding friend" });
   }
-
-  res.json({ message: "Friend added", friends: users[req.user].friends });
 });
 
 // ➖ Remove friend
-app.post('/remove-friend', authMiddleware, (req, res) => {
+app.post('/remove-friend', authMiddleware, async (req, res) => {
   const { username } = req.body;
   if (!username) return res.status(400).json({ error: 'Username required' });
 
-  let users = loadUsers();
-  users[req.user].friends = users[req.user].friends.filter(u => u !== username);
-  saveUsers(users);
-
-  res.json({ message: 'Friend removed', friends: users[req.user].friends });
+  try {
+    const user = await User.findOne({ username: req.user });
+    user.friends = user.friends.filter(u => u !== username);
+    await user.save();
+    res.json({ message: 'Friend removed', friends: user.friends });
+  } catch (err) {
+    res.status(500).json({ error: "Error removing friend" });
+  }
 });
 
 // 🔥 Fetch LeetCode data
@@ -187,11 +177,11 @@ async function fetchLeetCodeData(username) {
 // 📊 Leaderboard
 app.get("/leaderboard", authMiddleware, async (req, res) => {
   try {
-    const users = loadUsers();
-    const friends = users[req.user].friends || [];
+    const user = await User.findOne({ username: req.user });
+    const friends = user.friends || [];
 
     const results = await Promise.all(
-      friends.map(user => fetchLeetCodeData(user))
+      friends.map(friendUsername => fetchLeetCodeData(friendUsername))
     );
 
     results.sort((a, b) => b.totalSolved - a.totalSolved);
@@ -201,7 +191,8 @@ app.get("/leaderboard", authMiddleware, async (req, res) => {
     res.status(500).json({ error: "Error fetching data" });
   }
 });
+const PORT = process.env.PORT || 5000;
 
-app.listen(5000, () => {
-  console.log("🚀 Server running on http://localhost:5000");
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

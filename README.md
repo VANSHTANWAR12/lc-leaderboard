@@ -67,7 +67,7 @@ A web app to track LeetCode problem-solving progress with friends. Features per-
 
 ### Vercel Considerations
 - Free tier: app may sleep after 100 requests in 24h
-- Data files (`users.json`, `friends.json`) are ephemeral — they reset on redeploy
+- Data files (`users.json`) are ephemeral — they reset on redeploy
 - **For production:** Use a database (PostgreSQL, MongoDB) instead of JSON files
 
 ## Deployment on Render
